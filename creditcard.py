@@ -1,5 +1,5 @@
 # Credit Card payment and deposit report generator
-#    
+#
 # Copyright (C) 2018  Mark
 #
 # This program is free software: you can redistribute it and/or modify
@@ -16,13 +16,15 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from xlrd import open_workbook, xldate_as_tuple
-import xlwt
-from xlwt import Workbook, XFStyle
+import os
+import sys
 
 from datetime import date, datetime
 from collections import OrderedDict
-import os, sys
+
+from xlrd import open_workbook, xldate_as_tuple
+import xlwt
+from xlwt import Workbook, XFStyle
 
 
 def get_paymentmode(filename):
@@ -40,7 +42,7 @@ def checkPayment(payment):
     Check if payment mode is for the list
     """
     return payment in PaymentMode
- 
+
 
 def getCreditCard(sheet, paymentcol, datecol):
     """
@@ -149,7 +151,7 @@ def remove_unwanted(refund, collect):
 if __name__ == '__main__':
     # Change directory to C:\Users\reception\Desktop\symphony\
     os.chdir('..')
-    
+
     # Get Cash in flow name from user
     cashinflow_filename = input("Enter file name (CIF): ")
     cashinflow_filename += ".xls"
@@ -175,33 +177,33 @@ if __name__ == '__main__':
     credit_card_deposit = getCreditCard(sheet2, 8, 7)
 
     # Test code to print creditcard & deposit list
-    #print(len(credit_card_cif))
-    #print(len(credit_card_deposit))
-    #print(credit_card_deposit)
+    # print(len(credit_card_cif))
+    # print(len(credit_card_deposit))
+    # print(credit_card_deposit)
 
     # Get the date list from credit card list
     datelist = []
 
-    if credit_card_cif: # get date from cash in flow 
+    if credit_card_cif:  # get date from cash in flow
         for i in range(len(credit_card_cif)):
             date_val = credit_card_cif[i][2]
             dateval = date(*date_val[:3])
             if dateval not in datelist:
                 datelist.append(dateval)
-        if credit_card_deposit: # get date from deposit
+        if credit_card_deposit:  # get date from deposit
             for i in range(len(credit_card_deposit)):
                 date_val = credit_card_deposit[i][7]
                 dateval = date(*date_val[:3])
                 if dateval not in datelist:
                     datelist.append(dateval)
-    elif credit_card_deposit: # get date from deposit if cash in flow is empty
+    elif credit_card_deposit:  # get date from deposit if cash in flow is empty
         for i in range(len(credit_card_deposit)):
             date_val = credit_card_deposit[i][7]
             dateval = date(*date_val[:3])
             if dateval not in datelist:
                 datelist.append(dateval)
-    
-    else: # exit if no date from both cash in flow and deposit
+
+    else:  # exit if no date from both cash in flow and deposit
         sys.exit("No data found")
 
     datelist.sort()
@@ -219,22 +221,20 @@ if __name__ == '__main__':
         dateStr = datelist[i].strftime("%y%m%d")
         ccard_cif[dateStr + "Revenue"] = get_cif(credit_card_cif, datelist[i])
 
-
     # create dictionaries of the credit card
     ccard_list = {}
 
     for i in range(len(datelist)):
         dateStr = datelist[i].strftime("%y%m%d")
         ccard_list[dateStr + "Collect"] = get_collect(credit_card_deposit,
-                                                    datelist[i])
+                                                      datelist[i])
         ccard_list[dateStr + "Refund"] = get_refund(credit_card_deposit,
                                                     datelist[i])
-
 
     # sort the dictionary
     od = OrderedDict(sorted(ccard_list.items()))
 
-    #SORT_ORDER = {"AMEX": 0, "CREDIT CARD": 1, "MASTER": 2, "VISA": 3, \
+    # SORT_ORDER = {"AMEX": 0, "CREDIT CARD": 1, "MASTER": 2, "VISA": 3, \
     #              "UNI": 4, "UNIONPAY": 5}
 
     SORT_ORDER = {}
@@ -256,13 +256,16 @@ if __name__ == '__main__':
         od[dateStr + "Collect"] = temp_depo
         del od[dateStr + "Refund"]
 
-
     for key in ccard_cif:
         for i in range(len(ccard_cif[key])):
-            ccard_cif[key][i] = ["R", ccard_cif[key][i][2], ccard_cif[key][i][4],
-                                ccard_cif[key][i][5], ccard_cif[key][i][9],
-                                ccard_cif[key][i][10]]
-
+            ccard_cif[key][i] = [
+                                 "R",
+                                 ccard_cif[key][i][2],
+                                 ccard_cif[key][i][4],
+                                 ccard_cif[key][i][5],
+                                 ccard_cif[key][i][9],
+                                 ccard_cif[key][i][10]
+                                ]
 
     for key in od:
         for i in range(len(od[key])):
@@ -271,8 +274,7 @@ if __name__ == '__main__':
             elif od[key][i][12] < 0:
                 od[key][i][12] = od[key][i][12] - (od[key][i][12]*2)
             od[key][i] = ["D", od[key][i][7], od[key][i][4], od[key][i][5],
-                        od[key][i][16], od[key][i][12]]
-
+                          od[key][i][16], od[key][i][12]]
 
     # concate cif and deposit
     for key in ccard_cif:
@@ -280,7 +282,6 @@ if __name__ == '__main__':
         for item in od:
             if mydate in item:
                 ccard_cif[key] = ccard_cif[key] + od[item]
-
 
     # Sort the credit card listing
     ccard_temp = ccard_cif
@@ -303,7 +304,6 @@ if __name__ == '__main__':
 
     style3 = XFStyle()
 
-
     font = xlwt.Font()
     font.height = 180
     style.font = font
@@ -313,21 +313,27 @@ if __name__ == '__main__':
     h = -1
     for key in ccard_cif:
         h += 1
-        #print(key)
+        # print(key)
         for i in range(len(ccard_cif[key])):
             for j in range(1, 7):
                 if j == 1:  # type
-                    sheet1[h].write(i, j, ccard_cif[key][i][0], style3)
+                    sheet1[h].write(i, j,
+                                    ccard_cif[key][i][0], style3)
                 if j == 2:  # date
-                    sheet1[h].write(i, j, datetime(*ccard_cif[key][i][1]), style)
+                    sheet1[h].write(i, j,
+                                    datetime(*ccard_cif[key][i][1]), style)
                 elif j == 3:  # room
-                    sheet1[h].write(i, j, ccard_cif[key][i][2], style3)
+                    sheet1[h].write(i, j,
+                                    ccard_cif[key][i][2], style3)
                 elif j == 4:  # name
-                    sheet1[h].write(i, j, ccard_cif[key][i][3], style3)
+                    sheet1[h].write(i, j,
+                                    ccard_cif[key][i][3], style3)
                 elif j == 5:  # folio
-                    sheet1[h].write(i, j, ccard_cif[key][i][4], style3)
+                    sheet1[h].write(i, j,
+                                    ccard_cif[key][i][4], style3)
                 elif j == 6:  # amount
-                    sheet1[h].write(i, j, ccard_cif[key][i][5], style2)
+                    sheet1[h].write(i, j,
+                                    ccard_cif[key][i][5], style2)
 
     print("Exporting to Excel....")
     if last:
